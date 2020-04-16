@@ -1,0 +1,151 @@
+---
+title: "Amino acid position plots"
+author: "mfpfox"
+date: "4/16/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## GOAL: explore positional differences for proteins using line plots
+
+## columns: 
+
+### notes: 
+- cadd scores for GRCh38 come from dbNSFP accession fltered files
+- cadd version v1.4 both models
+- dbnsfp version 4.0a
+- LIST file provided conservation and disorder score
+- only missense CADD scores (filtered out nonsense)
+  
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+```{r, include=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(ggpubr)
+library(dplyr)
+library(RColorBrewer)
+library(plotly)
+library(tidyr)
+```
+
+```{r}
+df <- read_csv('G6PDfigure_CADDmaxmean_7CKcodonclean.csv')
+df
+```
+
+```{r}
+summary(df)
+```
+
+# add column for cadd max-mean, both GRCh37 and GRCh38
+```{r}
+
+```
+
+## what has highest difference (CADD MAX - CADD MEAN)
+```{r}
+df <- df %>% 
+  filter(aapos_id != 'X_516')
+df %>% 
+  filter(max_minus_avg > 8)
+```
+
+### split df
+```{r}
+df <- df %>%
+  separate(aapos_id, c('aaref','aapos'), sep = "_")
+```
+
+```{r}
+df[order(df$cadd38_max_missense,decreasing = TRUE),c(1,2,3,4,5,6)]
+```
+
+## fix column type 
+```{r}
+df$aapos <- as.numeric(df$aapos)
+```
+
+
+
+# max and average
+```{r}
+lineaa <- df %>%
+  ggplot(aes(x=aapos, y=cadd38_max_missense)) + 
+  theme_minimal() + theme(legend.position = "none") + theme(panel.grid.minor = element_blank(),panel.grid.major = element_blank(), panel.background = element_blank(), axis.line = element_line(colour = "black")) +  ylab("CADD38 Scores") +  xlab("G6PD AA position") + 
+  theme(plot.title = element_text(hjust=0.5), axis.title.x = element_text(size=13, color="black", margin=margin(t=15, b=5)),axis.title.y = element_text(size=11, color="black", margin=margin(t=0, r=15, b=0)), axis.text=element_text(size=11, color="black",margin=margin(t=15, b=5))) + 
+  geom_line(data = df, aes(x = aapos, y = cadd38_max_missense), size=.4,color = "darkslategray3") +
+  geom_line(data = df, aes(x = aapos, y = cadd38_avg_missense), size=.4,color = "darkslateblue") +
+  geom_vline(xintercept=c(497,446,432,408,386,385,294,205,171,158,97,89,82,47,13), color="darkred", size=.2, alpha=0.9)  + scale_x_continuous(breaks=seq(0, 515, 50)) + scale_y_continuous(breaks=seq(0, 35, 5)) + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+lineaa
+#ggsave("G6PDline_max_avg.pdf", width = 10, height=3, dpi= 300)
+
+```
+
+# average only
+```{r}
+lineavg <- df %>%
+  ggplot(aes(x=aapos, y=cadd38_max_missense)) + theme_minimal() + theme(legend.position = "none") + theme(panel.grid.minor = element_blank(),panel.grid.major = element_blank(), panel.background = element_blank(), axis.line = element_line(colour = "black")) + 
+  ylab("CADD38 average scores") +
+  xlab("G6PD AA position") + theme(plot.title = element_text(hjust=0.5), axis.title.x = element_text(size=13, color="black", margin=margin(t=15, b=5)),axis.title.y = element_text(size=11, color="black", margin=margin(t=0, r=15, b=0)), axis.text=element_text(size=11, color="black",margin=margin(t=15, b=5))) + 
+  geom_line(data = df, aes(x = aapos, y = cadd38_avg_missense), size=.4,color = "darkslateblue") +
+  geom_vline(xintercept=c(497,446,432,408,386,385,294,205,171,158,97,89,82,47,13), color="darkred", size=.2, alpha=0.9)  + scale_x_continuous(breaks=seq(0, 515, 50)) + scale_y_continuous(breaks=seq(0, 35, 5)) + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+lineavg
+#ggsave("G6PDline_avg_cadd38.pdf", width = 10, height=3, dpi= 300)
+```
+
+# max only 
+
+```{r}
+linemax <- df %>%
+  ggplot(aes(x=aapos, y=cadd38_max_missense)) + theme_minimal() + theme(legend.position = "none") + theme(panel.grid.minor = element_blank(),panel.grid.major = element_blank(), panel.background = element_blank(), axis.line = element_line(colour = "black")) + 
+  ylab("CADD38 max scores") +
+  xlab("G6PD AA position") + theme(plot.title = element_text(hjust=0.5), axis.title.x = element_text(size=13, color="black", margin=margin(t=15, b=5)),axis.title.y = element_text(size=11, color="black", margin=margin(t=0, r=15, b=0)), axis.text=element_text(size=11, color="black",margin=margin(t=15, b=5))) + 
+  geom_line(data = df, aes(x = aapos, y = cadd38_max_missense), size=.4,color = "darkslategray3") +
+  geom_vline(xintercept=c(497,446,432,408,386,385,294,205,171,158,97,89,82,47,13), color="darkred", size=.2, alpha=0.9)  + scale_x_continuous(breaks=seq(0, 515, 50)) + scale_y_continuous(breaks=seq(0, 35, 5)) + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+linemax
+#ggsave("G6PDline_max_cadd38.pdf", width = 10, height=3, dpi= 300)
+```
+
+
+```{r}
+maxavg <- df %>%
+  ggplot(aes(x=aapos, y=max_minus_avg)) + theme_minimal() + theme(legend.position = "none") + theme(panel.grid.minor = element_blank(),panel.grid.major = element_blank(), panel.background = element_blank(), axis.line = element_line(colour = "black")) + 
+  ylab("CADD max - average") +
+  xlab("G6PD AA position") + theme(plot.title = element_text(hjust=0.5), axis.title.x = element_text(size=13, color="black", margin=margin(t=15, b=5)),axis.title.y = element_text(size=11, color="black", margin=margin(t=0, r=15, b=0)), axis.text=element_text(size=11, color="black",margin=margin(t=15, b=5))) + 
+  geom_line(data = df, aes(x = aapos, y = max_minus_avg), size=.4,color = "plum") +
+  geom_vline(xintercept=c(497,446,432,408,386,385,294,205,171,158,97,89,82,47,13), color="darkred", size=.2, alpha=0.9)  + scale_x_continuous(breaks=seq(0, 515, 50)) + scale_y_continuous(breaks=seq(0, 9, 2)) + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+maxavg
+ggsave("G6PDline_max_minus_avg.pdf", width = 10, height=2, dpi= 300)
+
+```
+
+
+# box plot of every letter as the X axis and max cadd scores are y axis
+
+```{r}
+boxaa <- df %>%
+  mutate(aaref = fct_reorder(aaref, cadd38_max_missense, .fun='median')) %>%
+  ggplot(aes(x=aaref, y=cadd38_max_missense, fill=aaref, alpha=0.5)) + theme_minimal() + theme(legend.position = "none") + theme(panel.grid.minor = element_blank(),panel.grid.major = element_blank(), panel.background = element_blank(), axis.line = element_line(colour = "black")) + 
+  ylab("Max CADD38 score per AA") +
+  xlab("G6PD residues lost") + theme(plot.title = element_text(hjust=0.5), axis.title.x = element_text(size=15, color="black", margin=margin(t=15, b=5)),axis.title.y = element_text(size=15, color="black", margin=margin(t=0, r=15, b=0)), axis.text=element_text(size=12, color="black",margin=margin(t=15, b=5))) +  scale_y_continuous(breaks=seq(0, 40, 5)) +
+  geom_boxplot(
+  outlier.colour = "red",
+  outlier.fill="red",
+  outlier.size = 0.2) 
+  
+boxaa
+#ggsave("G6PDbox_max_cadd38.pdf", width = 5, height=4, dpi= 300)
+```
+
